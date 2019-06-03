@@ -3,6 +3,7 @@ const express = require('express');
 const Accounts = require('./data/accounts-model');
 
 const server = express();
+server.use(express.json());
 
 server.get('/', async (req, res) => {
     try {
@@ -11,16 +12,51 @@ server.get('/', async (req, res) => {
     } catch (err) {
         console.log(err);
         res.status(500).json({ message: `${err}` })
-    }
+    };
 });
 
 server.get('/:id', async (req, res) => {
     try {
         const acctId = await Accounts.findById(req.params.id);
-        res.status(200).json(acctId)
+        if (acctId) {
+            res.status(200).json(acctId)
+        } else {
+            res.status(400).json({ message: "Id not found"})
+        };
     } catch (error) {
         res.status(500).json({ message: `${error}` })
-    }
+    };
 });
+
+server.post('/', async (req, res) => {
+    const { name, budget } = req.body;
+    try {
+        const newAcct = await Accounts.add(req.body);
+        if (!name || name === "" || !budget || budget === "") {
+            res.status(400).json({ error: "Please Provide a Name and Budget for this account" });
+        } else {
+            res.status(201).json(newAcct)
+        };
+    } catch (error) {
+        res.status(500).json({ error: `${error}` })
+    };
+});
+
+server.put('/:id', async (req, res) => {
+    const { id } = req.params;
+    const { name, budget } = req.body;
+    try {
+        const updateAcct = await Accounts.findById(id);
+        if (updateAcct) {
+            await Accounts.update(id, { name, budget });
+            res.status(200).json(updateAcct);
+        } else {
+            res.status(400).json({ message: "Unable to find that Account" });
+        };
+    } catch (error) {
+        res.status(500).json({ error: `${error}` });
+    };
+});
+
 
 module.exports = server;
